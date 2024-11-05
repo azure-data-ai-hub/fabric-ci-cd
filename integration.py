@@ -50,14 +50,31 @@ def get_access_token(authority_url, client_id, client_secret, resource_url):
 # Get objects from source workspace
 def get_workspace_objects(workspace_id, access_token):
     headers = {'Authorization': f'Bearer {access_token}'}
-    datasets = requests.get(f'{source_api_url}/workspaces/{workspace_id}/datasets', headers=headers).json()['value']
-    reports = requests.get(f'{source_api_url}/workspaces/{workspace_id}/reports', headers=headers).json()['value']
-    dashboards = requests.get(f'{source_api_url}/workspaces/{workspace_id}/dashboards', headers=headers).json()['value']
-    dataflows = requests.get(f'{source_api_url}/workspaces/{workspace_id}/dataflows', headers=headers).json()['value']
-    pipelines = requests.get(f'{source_api_url}/workspaces/{workspace_id}/pipelines', headers=headers).json()['value']
-    lakehouses = requests.get(f'{source_api_url}/workspaces/{workspace_id}/lakehouses', headers=headers).json()['value']
-    data_warehouses = requests.get(f'{source_api_url}/workspaces/{workspace_id}/datawarehouses', headers=headers).json()['value']
-    return datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses
+    objects = {}
+
+    endpoints = {
+        'datasets': f'{source_api_url}/workspaces/{workspace_id}/datasets',
+        'reports': f'{source_api_url}/workspaces/{workspace_id}/reports',
+        'dashboards': f'{source_api_url}/workspaces/{workspace_id}/dashboards',
+        'dataflows': f'{source_api_url}/workspaces/{workspace_id}/dataflows',
+        'pipelines': f'{source_api_url}/workspaces/{workspace_id}/pipelines',
+        'lakehouses': f'{source_api_url}/workspaces/{workspace_id}/lakehouses',
+        'data_warehouses': f'{source_api_url}/workspaces/{workspace_id}/datawarehouses',
+    }
+
+    for obj_type, url in endpoints.items():
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json().get('value', [])
+            objects[obj_type] = data
+        elif response.status_code == 404:
+            logging.info(f"{obj_type.capitalize()} not found in workspace {workspace_id}.")
+            objects[obj_type] = []
+        else:
+            logging.info(f"Error retrieving {obj_type}: {response.status_code} - {response.text}")
+            objects[obj_type] = []
+
+    return objects
 
 # Save objects to JSON files
 def save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses):
