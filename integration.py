@@ -23,28 +23,26 @@ target_api_url = 'https://api.fabric.microsoft.com/v1.0'
 source_workspace_id = os.getenv('SOURCE_WORKSPACE_ID')
 target_workspace_id = os.getenv('TARGET_WORKSPACE_ID')
 
-def get_access_token(client_id, client_secret, tenant_id):
-    url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-    body = {
+def get_access_token(authority_url, client_id, client_secret, resource_url):
+    url = f'{authority_url}/oauth2/v2.0/token'
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {
         'grant_type': 'client_credentials',
         'client_id': client_id,
         'client_secret': client_secret,
-        'scope': 'https://graph.microsoft.com/.default'
+        'scope': resource_url + '/.default'
     }
 
     logging.info(f"Request URL: {url}")
     logging.info(f"Request Headers: {headers}")
-    logging.info(f"Request Body: {body}")
+    logging.info(f"Request Body: {data}")
 
-    response = requests.post(url, headers=headers, data=body)
+    response = requests.post(url, headers=headers, data=data)
     logging.info(f"Response Status Code: {response.status_code}")
     logging.info(f"Response Body: {response.text}")
 
     response.raise_for_status()
-    return response.json().get('access_token')
+    return response.json()['access_token']
     
 # Get objects from source workspace
 def get_workspace_objects(workspace_id, access_token):
