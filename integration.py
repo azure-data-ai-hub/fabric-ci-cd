@@ -37,14 +37,18 @@ target_client = FabricMgmtClient(target_credentials, target_subscription_id)
 # Example function to get objects from source workspace
 def get_workspace_objects(client, workspace_id):
     # Replace with actual method to get workspace objects
-    return client.workspaces.get(workspace_id)
+    # return client.workspaces.get(workspace_id)
+    # Example: Retrieving datasets from the workspace 
+    datasets = source_client.datasets.list_by_workspace(resource_group_name='rg-Fabric', workspace_name=source_workspace_id) 
+    for dataset in datasets: 
+        print(f"Found dataset: {dataset.name}") # Save or process the dataset as needed
 
 # Example function to copy objects from source to target workspace
 def copy_workspace_objects(source_client, target_client, source_workspace_id, target_workspace_id):
-    source_objects = get_workspace_objects(source_client, source_workspace_id)
-    for obj in source_objects:
+    get_workspace_objects(source_client, source_workspace_id)
+    #for obj in source_objects:
         # Replace with actual method to create objects in target workspace
-        target_client.workspaces.create_or_update(target_workspace_id, obj)
+        #target_client.workspaces.create_or_update(target_workspace_id, obj)
 
 # Main function
 def main():
