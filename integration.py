@@ -3,6 +3,9 @@ import json
 import os
 import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 # Azure AD and Microsoft Fabric API configuration for source subscription
 source_client_id = os.getenv('SOURCE_AZURE_CLIENT_ID')
 source_client_secret = os.getenv('SOURCE_AZURE_CLIENT_SECRET')
