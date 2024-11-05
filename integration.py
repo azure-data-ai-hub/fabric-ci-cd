@@ -22,29 +22,14 @@ target_api_url = 'https://api.fabric.microsoft.com/v1.0'
 source_workspace_id = os.getenv('SOURCE_WORKSPACE_ID')
 target_workspace_id = os.getenv('TARGET_WORKSPACE_ID')
 
-# Authenticate and get access token for source subscription
-def get_source_access_token():
-    url = f'{source_authority_url}/oauth2/v2.0/token'
+def get_access_token(authority_url, client_id, client_secret, resource_url):
+    url = f'{authority_url}/oauth2/v2.0/token'
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = {
         'grant_type': 'client_credentials',
-        'client_id': source_client_id,
-        'client_secret': source_client_secret,
-        'scope': source_resource_url + '/.default'
-    }
-    response = requests.post(url, headers=headers, data=data)
-    response.raise_for_status()
-    return response.json()['access_token']
-
-# Authenticate and get access token for target subscription
-def get_target_access_token():
-    url = f'{target_authority_url}/oauth2/v2.0/token'
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    data = {
-        'grant_type': 'client_credentials',
-        'client_id': target_client_id,
-        'client_secret': target_client_secret,
-        'scope': target_resource_url + '/.default'
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'scope': resource_url + '/.default'
     }
     response = requests.post(url, headers=headers, data=data)
     response.raise_for_status()
@@ -113,8 +98,23 @@ def merge_objects_in_target_workspace(file_path, object_type, access_token):
 
 # Main function
 def main():
-    source_access_token = get_source_access_token()
-    target_access_token = get_target_access_token()
+
+    # Authenticate and get access token for source subscription
+    source_access_token = get_access_token(
+    source_authority_url,
+    source_client_id,
+    source_client_secret,
+    source_resource_url
+    )
+
+    # Authenticate and get access token for target subscription
+    target_access_token = get_access_token(
+        target_authority_url,
+        target_client_id,
+        target_client_secret,
+        target_resource_url
+    )
+
     datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses = get_workspace_objects(source_workspace_id, source_access_token)
     save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses)
     merge_objects_in_target_workspace('datasets.json', 'datasets', target_access_token)

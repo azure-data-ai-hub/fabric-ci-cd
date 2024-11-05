@@ -34,7 +34,7 @@ jobs:
         SOURCE_WORKSPACE_ID: ${{ secrets.SOURCE_WORKSPACE_ID }}
         TARGET_WORKSPACE_ID: ${{ secrets.TARGET_WORKSPACE_ID }}
       run: |
-        python fabric_integration.py
+        python integration.py
 
     - name: Commit and push changes
       run: |
