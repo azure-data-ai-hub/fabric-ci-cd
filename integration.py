@@ -1,6 +1,6 @@
 import os
 from azure.identity import ClientSecretCredential
-from azure.mgmt.fabric import FabricManagementClient
+from azure.mgmt.fabric import FabricMgmtClient
 
 # Azure AD and Microsoft Fabric API configuration for source subscription
 source_client_id = os.getenv('SOURCE_AZURE_CLIENT_ID')
@@ -18,21 +18,21 @@ target_subscription_id = os.getenv('TARGET_SUBSCRIPTION_ID')
 source_workspace_id = os.getenv('SOURCE_WORKSPACE_ID')
 target_workspace_id = os.getenv('TARGET_WORKSPACE_ID')
 
-# Authenticate and create FabricManagementClient for source
+# Authenticate and create FabricMgmtClient for source
 source_credentials = ClientSecretCredential(
     tenant_id=source_tenant_id,
     client_id=source_client_id,
     client_secret=source_client_secret
 )
-source_client = FabricManagementClient(source_credentials, source_subscription_id)
+source_client = FabricMgmtClient(source_credentials, source_subscription_id)
 
-# Authenticate and create FabricManagementClient for target
+# Authenticate and create FabricMgmtClient for target
 target_credentials = ClientSecretCredential(
     tenant_id=target_tenant_id,
     client_id=target_client_id,
     client_secret=target_client_secret
 )
-target_client = FabricManagementClient(target_credentials, target_subscription_id)
+target_client = FabricMgmtClient(target_credentials, target_subscription_id)
 
 # Example function to get objects from source workspace
 def get_workspace_objects(client, workspace_id):
