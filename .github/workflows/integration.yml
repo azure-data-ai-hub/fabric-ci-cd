@@ -21,18 +21,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install azure-identity azure-mgmt-fabric
+        pip install requests
 
     - name: Run Fabric Integration Script
       env:
         SOURCE_AZURE_CLIENT_ID: ${{ secrets.SOURCE_AZURE_CLIENT_ID }}
         SOURCE_AZURE_CLIENT_SECRET: ${{ secrets.SOURCE_AZURE_CLIENT_SECRET }}
         SOURCE_AZURE_TENANT_ID: ${{ secrets.SOURCE_AZURE_TENANT_ID }}
-        SOURCE_SUBSCRIPTION_ID: ${{ secrets.SOURCE_SUBSCRIPTION_ID }}
         TARGET_AZURE_CLIENT_ID: ${{ secrets.SOURCE_AZURE_CLIENT_ID }}
         TARGET_AZURE_CLIENT_SECRET: ${{ secrets.SOURCE_AZURE_CLIENT_SECRET }}
         TARGET_AZURE_TENANT_ID: ${{ secrets.SOURCE_AZURE_TENANT_ID }}
-        TARGET_SUBSCRIPTION_ID: ${{ secrets.SOURCE_SUBSCRIPTION_ID }}
         SOURCE_WORKSPACE_ID: ${{ secrets.SOURCE_WORKSPACE_ID }}
         TARGET_WORKSPACE_ID: ${{ secrets.TARGET_WORKSPACE_ID }}
       run: |
