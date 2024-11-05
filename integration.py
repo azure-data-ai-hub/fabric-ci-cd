@@ -78,20 +78,34 @@ def get_workspace_objects(workspace_id, access_token):
 
 # Save objects to JSON files
 def save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses):
+    logging.info("Saving datasets to datasets.json")
     with open('datasets.json', 'w') as f:
         json.dump(datasets, f, indent=4)
+    
+    logging.info("Saving reports to reports.json")
     with open('reports.json', 'w') as f:
         json.dump(reports, f, indent=4)
+    
+    logging.info("Saving dashboards to dashboards.json")
     with open('dashboards.json', 'w') as f:
         json.dump(dashboards, f, indent=4)
+    
+    logging.info("Saving dataflows to dataflows.json")
     with open('dataflows.json', 'w') as f:
         json.dump(dataflows, f, indent=4)
+    
+    logging.info("Saving pipelines to pipelines.json")
     with open('pipelines.json', 'w') as f:
         json.dump(pipelines, f, indent=4)
+    
+    logging.info("Saving lakehouses to lakehouses.json")
     with open('lakehouses.json', 'w') as f:
         json.dump(lakehouses, f, indent=4)
+    
+    logging.info("Saving data warehouses to data_warehouses.json")
     with open('data_warehouses.json', 'w') as f:
         json.dump(data_warehouses, f, indent=4)
+    logging.info("All objects have been saved successfully.")
 
 # Get existing objects in target workspace
 def get_existing_objects(workspace_id, access_token, object_type):
