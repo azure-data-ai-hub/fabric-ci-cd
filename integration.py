@@ -1,31 +1,3 @@
-import requests
-import json
-import os
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# Azure AD and Microsoft Fabric API configuration for source subscription
-source_client_id = os.getenv('SOURCE_AZURE_CLIENT_ID')
-source_client_secret = os.getenv('SOURCE_AZURE_CLIENT_SECRET')
-source_tenant_id = os.getenv('SOURCE_AZURE_TENANT_ID')
-source_authority_url = f'https://login.microsoftonline.com/{source_tenant_id}'
-source_resource_url = 'https://analysis.windows.net/powerbi/api'
-source_api_url = 'https://api.fabric.microsoft.com/v1'
-
-# Azure AD and Microsoft Fabric API configuration for target subscription
-target_client_id = os.getenv('TARGET_AZURE_CLIENT_ID')
-target_client_secret = os.getenv('TARGET_AZURE_CLIENT_SECRET')
-target_tenant_id = os.getenv('TARGET_AZURE_TENANT_ID')
-target_authority_url = f'https://login.microsoftonline.com/{target_tenant_id}'
-target_resource_url = 'https://analysis.windows.net/powerbi/api'
-target_api_url = 'https://api.fabric.microsoft.com/v1'
-
-# Source and target workspace IDs
-source_workspace_id = os.getenv('SOURCE_WORKSPACE_ID')
-target_workspace_id = os.getenv('TARGET_WORKSPACE_ID')
-
 def get_access_token(authority_url, client_id, client_secret, resource_url):
     url = f'{authority_url}/oauth2/v2.0/token'
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -36,18 +8,39 @@ def get_access_token(authority_url, client_id, client_secret, resource_url):
         'scope': resource_url + '/.default'
     }
 
-    logging.info(f"Request URL: {url}")
-    logging.info(f"Request Headers: {headers}")
-    logging.info(f"Request Body: {data}")
+    logging.info(f"Requesting access token from {url}")
+    logging.debug(f"Request headers: {headers}")
+    logging.debug(f"Request body: {data}")
 
     response = requests.post(url, headers=headers, data=data)
-    logging.info(f"Response Status Code: {response.status_code}")
-    logging.info(f"Response Body: {response.text}")
+    logging.info(f"Access token response status code: {response.status_code}")
 
-    response.raise_for_status()
-    return response.json()['access_token']
-    
-# Get objects from source workspace
+    if response.status_code != 200:
+        logging.error(f"Failed to obtain access token: {response.text}")
+        response.raise_for_status()
+
+    access_token = response.json().get('access_token')
+    if not access_token:
+        logging.error("Access token not found in the response.")
+        raise ValueError("Access token not found in the response.")
+
+    logging.info("Access token obtained successfully.")
+    return access_token
+
+def extract_data_from_response(response_data, obj_type):
+    if isinstance(response_data, dict):
+        if 'value' in response_data:
+            return response_data['value']
+        elif obj_type in response_data:
+            return response_data[obj_type]
+        else:
+            return [response_data]
+    elif isinstance(response_data, list):
+        return response_data
+    else:
+        logging.error(f"Unexpected response format for {obj_type}: {response_data}")
+        return []
+
 def get_workspace_objects(workspace_id, access_token):
     headers = {'Authorization': f'Bearer {access_token}'}
     objects = {}
@@ -63,49 +56,31 @@ def get_workspace_objects(workspace_id, access_token):
     }
 
     for obj_type, url in endpoints.items():
+        logging.info(f"Fetching {obj_type} from {url}")
         response = requests.get(url, headers=headers)
+        logging.info(f"Response status code for {obj_type}: {response.status_code}")
+
         if response.status_code == 200:
-            data = response.json().get('value', [])
+            response_data = response.json()
+            logging.debug(f"Response data for {obj_type}: {json.dumps(response_data, indent=2)}")
+            data = extract_data_from_response(response_data, obj_type)
             objects[obj_type] = data
+            logging.info(f"Retrieved {len(data)} {obj_type}")
         elif response.status_code == 404:
-            logging.info(f"{obj_type.capitalize()} not found in workspace {workspace_id}.")
+            logging.warning(f"{obj_type.capitalize()} not found in workspace {workspace_id}.")
             objects[obj_type] = []
         else:
-            logging.info(f"Error retrieving {obj_type}: {response.status_code} - {response.text}")
+            logging.error(f"Error retrieving {obj_type}: {response.status_code} - {response.text}")
             objects[obj_type] = []
 
     return objects
 
-# Save objects to JSON files
-def save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses):
-    logging.info("Saving datasets to datasets.json")
-    with open('datasets.json', 'w') as f:
-        json.dump(datasets, f, indent=4)
-    
-    logging.info("Saving reports to reports.json")
-    with open('reports.json', 'w') as f:
-        json.dump(reports, f, indent=4)
-    
-    logging.info("Saving dashboards to dashboards.json")
-    with open('dashboards.json', 'w') as f:
-        json.dump(dashboards, f, indent=4)
-    
-    logging.info("Saving dataflows to dataflows.json")
-    with open('dataflows.json', 'w') as f:
-        json.dump(dataflows, f, indent=4)
-    
-    logging.info("Saving pipelines to pipelines.json")
-    with open('pipelines.json', 'w') as f:
-        json.dump(pipelines, f, indent=4)
-    
-    logging.info("Saving lakehouses to lakehouses.json")
-    with open('lakehouses.json', 'w') as f:
-        json.dump(lakehouses, f, indent=4)
-    
-    logging.info("Saving data warehouses to data_warehouses.json")
-    with open('data_warehouses.json', 'w') as f:
-        json.dump(data_warehouses, f, indent=4)
-    logging.info("All objects have been saved successfully.")
+def save_objects_to_files(objects):
+    for obj_type, obj_list in objects.items():
+        file_name = f'{obj_type}.json'
+        with open(file_name, 'w') as f:
+            json.dump(obj_list, f, indent=4)
+        logging.info(f"Saved {len(obj_list)} {obj_type} to {file_name}")
 
 # Get existing objects in target workspace
 def get_existing_objects(workspace_id, access_token, object_type):
@@ -149,8 +124,6 @@ def merge_objects_in_target_workspace(file_path, object_type, access_token):
     try:
         with open(file_path, 'r') as f:
             objects = json.load(f)
-            if not isinstance(objects, list):
-                raise ValueError("Expected a list of objects")
             
             existing_objects = get_existing_objects(target_workspace_id, access_token, object_type)
             existing_object_names = {obj['name']: obj['id'] for obj in existing_objects if 'name' in obj and 'id' in obj}
@@ -199,15 +172,11 @@ def main():
         target_resource_url
     )
 
-    datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses = get_workspace_objects(source_workspace_id, source_access_token)
-    save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, lakehouses, data_warehouses)
-    merge_objects_in_target_workspace('datasets.json', 'datasets', target_access_token)
-    merge_objects_in_target_workspace('reports.json', 'reports', target_access_token)
-    merge_objects_in_target_workspace('dashboards.json', 'dashboards', target_access_token)
-    merge_objects_in_target_workspace('dataflows.json', 'dataflows', target_access_token)
-    merge_objects_in_target_workspace('pipelines.json', 'pipelines', target_access_token)
-    merge_objects_in_target_workspace('lakehouses.json', 'lakehouses', target_access_token)
-    merge_objects_in_target_workspace('data_warehouses.json', 'datawarehouses', target_access_token)
+    # Get objects from source workspace
+    logging.info(f"Retrieving objects from source workspace {source_workspace_id}")
+    objects = get_workspace_objects(source_workspace_id, source_access_token)
+    save_objects_to_files(objects)
+    logging.info("Object retrieval and saving completed.")
 
 if __name__ == '__main__':
     main()
