@@ -36,10 +36,8 @@ jobs:
       run: |
         python integration.py
 
-    - name: Commit and push changes
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add datasets.json reports.json dashboards.json dataflows.json pipelines.json lakehouses.json data_warehouses.json
-        git commit -m 'Check in objects read from source workspace'
-        git push
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: saved-files
+        path: .
