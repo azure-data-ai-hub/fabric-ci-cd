@@ -234,14 +234,3 @@ When contributing, please ensure that your code follows best practices and inclu
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
-```
-
----
-
-This `README.md` provides comprehensive instructions on setting up, configuring, and running your integration scripts, both locally and via GitHub Actions. It references the `integration.py` and `integration.yml` files and includes sections on prerequisites, setup, environment variables, logging, and troubleshooting.
-
-Let me know if you need any further assistance or modifications.---
-
-This `README.md` provides comprehensive instructions on setting up, configuring, and running your integration scripts, both locally and via GitHub Actions. It references the `integration.py` and `integration.yml` files and includes sections on prerequisites, setup, environment variables, logging, and troubleshooting.
-
-Let me know if you need any further assistance or modifications.
