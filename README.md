@@ -1,5 +1,5 @@
 # fabric-ci-cd
-Fabric CI/CD using github Actions and Microsoft Fanric REST endpoints: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
+Fabric CI/CD using github Actions and Microsoft Fabric REST endpoints: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 
 This project provides a set of scripts and configurations to build custom CI/CD for Fabric workspaces. It utilizes the Microsoft Fabric REST API and Azure Active Directory authentication to import/export resources from a source workspace and import them into a target workspace.
 
