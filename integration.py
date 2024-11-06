@@ -110,10 +110,19 @@ def save_objects_to_files(datasets, reports, dashboards, dataflows, pipelines, l
 # Get existing objects in target workspace
 def get_existing_objects(workspace_id, access_token, object_type):
     headers = {'Authorization': f'Bearer {access_token}'}
-    response = requests.get(f'{target_api_url}/workspaces/{workspace_id}/{object_type}', headers=headers)
-    response.raise_for_status()
-    return response.json()['value']
-
+    try:
+        response = requests.get(f'{target_api_url}/workspaces/{workspace_id}/{object_type}', headers=headers)
+        response.raise_for_status()
+        return response.json()['value']
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 404:
+            logging.error(f"Resource not found: {http_err}")
+        else:
+            logging.error(f"HTTP error occurred: {http_err}")
+    except Exception as err:
+        logging.error(f"An error occurred: {err}")
+    return []
+    
 # Update existing object in target workspace
 def update_existing_object(workspace_id, access_token, object_type, object_id, data):
     headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
@@ -123,21 +132,41 @@ def update_existing_object(workspace_id, access_token, object_type, object_id, d
 # Create new object in target workspace
 def create_new_object(workspace_id, access_token, object_type, data):
     headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
-    response = requests.post(f'{target_api_url}/workspaces/{workspace_id}/{object_type}', headers=headers, data=json.dumps(data))
-    response.raise_for_status()
+    try:
+        response = requests.post(f'{target_api_url}/workspaces/{workspace_id}/{object_type}', headers=headers, data=json.dumps(data))
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 404:
+            logging.error(f"Resource not found while creating {object_type}: {http_err}")
+        else:
+            logging.error(f"HTTP error occurred while creating {object_type}: {http_err}")
+    except Exception as err:
+        logging.error(f"An error occurred while creating {object_type}: {err}")
 
 # Merge objects in target workspace
 def merge_objects_in_target_workspace(file_path, object_type, access_token):
     headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
-    with open(file_path, 'r') as f:
-        objects = json.load(f)
-        existing_objects = get_existing_objects(target_workspace_id, access_token, object_type)
-        existing_object_names = {obj['name']: obj['id'] for obj in existing_objects}
-        for obj in objects:
-            if obj['name'] in existing_object_names:
-                update_existing_object(target_workspace_id, access_token, object_type, existing_object_names[obj['name']], obj)
-            else:
-                create_new_object(target_workspace_id, access_token, object_type, obj)
+    try:
+        with open(file_path, 'r') as f:
+            objects = json.load(f)
+            existing_objects = get_existing_objects(target_workspace_id, access_token, object_type)
+            existing_object_names = {obj['name']: obj['id'] for obj in existing_objects}
+            for obj in objects:
+                if obj['name'] in existing_object_names:
+                    update_existing_object(target_workspace_id, access_token, object_type, existing_object_names[obj['name']], obj)
+                else:
+                    create_new_object(target_workspace_id, access_token, object_type, obj)
+    except FileNotFoundError as e:
+        logging.error(f"File not found error: {e}")
+    except json.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON from file {file_path}: {e}")
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 404:
+            logging.error(f"Resource not found while merging {object_type}: {http_err}")
+        else:
+            logging.error(f"HTTP error occurred while merging {object_type}: {http_err}")
+    except Exception as err:
+        logging.error(f"An error occurred while merging {object_type}: {err}")
 
 # Main function
 def main():
