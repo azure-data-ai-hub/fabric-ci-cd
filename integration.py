@@ -1,3 +1,31 @@
+import requests
+import json
+import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Azure AD and Microsoft Fabric API configuration for source subscription
+source_client_id = os.getenv('SOURCE_AZURE_CLIENT_ID')
+source_client_secret = os.getenv('SOURCE_AZURE_CLIENT_SECRET')
+source_tenant_id = os.getenv('SOURCE_AZURE_TENANT_ID')
+source_authority_url = f'https://login.microsoftonline.com/{source_tenant_id}'
+source_resource_url = 'https://analysis.windows.net/powerbi/api'
+source_api_url = 'https://api.fabric.microsoft.com/v1'
+
+# Azure AD and Microsoft Fabric API configuration for target subscription
+target_client_id = os.getenv('TARGET_AZURE_CLIENT_ID')
+target_client_secret = os.getenv('TARGET_AZURE_CLIENT_SECRET')
+target_tenant_id = os.getenv('TARGET_AZURE_TENANT_ID')
+target_authority_url = f'https://login.microsoftonline.com/{target_tenant_id}'
+target_resource_url = 'https://analysis.windows.net/powerbi/api'
+target_api_url = 'https://api.fabric.microsoft.com/v1'
+
+# Source and target workspace IDs
+source_workspace_id = os.getenv('SOURCE_WORKSPACE_ID')
+target_workspace_id = os.getenv('TARGET_WORKSPACE_ID')
+
 def get_access_token(authority_url, client_id, client_secret, resource_url):
     url = f'{authority_url}/oauth2/v2.0/token'
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
