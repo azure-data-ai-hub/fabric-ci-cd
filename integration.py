@@ -116,7 +116,7 @@ def get_existing_objects(workspace_id, access_token, object_type):
         return response.json()['value']
     except requests.exceptions.HTTPError as http_err:
         if response.status_code == 404:
-            logging.error(f"Resource not found: {http_err}")
+            logging.info(f"Resource not found: {http_err}")
         else:
             logging.error(f"HTTP error occurred: {http_err}")
     except Exception as err:
@@ -149,9 +149,21 @@ def merge_objects_in_target_workspace(file_path, object_type, access_token):
     try:
         with open(file_path, 'r') as f:
             objects = json.load(f)
+            if not isinstance(objects, list):
+                raise ValueError("Expected a list of objects")
+            
             existing_objects = get_existing_objects(target_workspace_id, access_token, object_type)
-            existing_object_names = {obj['name']: obj['id'] for obj in existing_objects}
+            existing_object_names = {obj['name']: obj['id'] for obj in existing_objects if 'name' in obj and 'id' in obj}
+            
             for obj in objects:
+                if not isinstance(obj, dict):
+                    logging.error("Invalid object format, expected a dictionary")
+                    continue
+                
+                if 'name' not in obj:
+                    logging.error("Object missing 'name' key")
+                    continue
+                
                 if obj['name'] in existing_object_names:
                     update_existing_object(target_workspace_id, access_token, object_type, existing_object_names[obj['name']], obj)
                 else:
@@ -161,13 +173,13 @@ def merge_objects_in_target_workspace(file_path, object_type, access_token):
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding JSON from file {file_path}: {e}")
     except requests.exceptions.HTTPError as http_err:
-        if response.status_code == 404:
+        if http_err.response.status_code == 404:
             logging.error(f"Resource not found while merging {object_type}: {http_err}")
         else:
             logging.error(f"HTTP error occurred while merging {object_type}: {http_err}")
     except Exception as err:
         logging.error(f"An error occurred while merging {object_type}: {err}")
-
+        
 # Main function
 def main():
 
